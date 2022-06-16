@@ -1,16 +1,24 @@
 // https://create.arduino.cc/projecthub/jimmyhuang92129/sharp-infrared-distance-sensor-11-30-15-ab22dc
 #include <Adafruit_NeoPixel.h>
+#include <EEPROM.h>
 
-#define PIN 6   // IR sensor pin 
-#define sensorpin A0
+#define PIN 6           // LED strip pin  
+#define sensorpin A0    // IR sensor pin 
+#define COB_PIN A2      // COB LED strip pin
 #define NUMPIXELS 200
-#define COB_PIN A2 // COB LED strip pin
+#define NUM_EFFECTS 10
+ 
+
+//byte selectedEffect=0;
+int effect = EEPROM.read(0); 
+
 const int sensor_max = 700;
 const int sensor_min = 400;
 float val = 0.0;
 float old_val = 0.0;
 int val_to_LED;
 float weight = 0.4;
+
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
  
@@ -20,6 +28,9 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+  effect++;
+  if(effect >= NUM_EFFECTS){effect = 0;}
+  EEPROM.write(0, effect);
 }
 
 
@@ -43,23 +54,97 @@ void loop()
 
   //controlled_pulse();
 
-  controlled_pulse_reverse();
+  //controlled_pulse_reverse();
 
   //controlled_pulse_COB();
+  
+  Serial.println(effect);
+  
 
   
-  
+  switch(effect) {
+    
+    case 0  : {
+                while(1){
+                  proximity_equaliser();
+                }
+              }
+
+    case 1  : {
+                while(1){
+                  proximity_equaliser_reverse();
+                }
+              }
+
+    case 2  : {
+                while(1){
+                  proximity_colour();
+                }
+              }
+
+    case 3  : {
+                while(1){
+                  proximity_brightness();
+                }
+
+              }
+
+    case 4  : {
+                while(1){
+                  pulse();
+                }
+              }
+
+    case 5  : {
+                while(1){
+                  pulse2();
+                }
+              }
+
+    case 6  : {
+                while(1){
+                  pulse_trigger();
+                }
+              }
+
+    case 7  : {
+                while(1){
+                  heartThrob(30);
+                }
+              }
+
+    case 8  : {
+                while(1){
+                  controlled_pulse();
+                }
+              }
+
+   case 9  : {
+                while(1){
+                  controlled_pulse_reverse();
+                }
+              }
+  }
+
 }
 
+//void changeEffect() {
+//  Serial.println("change");
+//  if (digitalRead (BUTTON) == HIGH) {
+//    Serial.println("changing");
+//    selectedEffect++;
+//    EEPROM.put(0, selectedEffect);
+//    asm volatile ("  jmp 0");
+//  }
+//}
 
 void proximity_equaliser(){
   pixels.clear(); // Set all pixel colors to 'off'
   val = weight * analogRead(sensorpin) + (1 - weight) * val;
   val_to_LED = map(val, sensor_min, sensor_max, 0, pixels.numPixels());
   val_to_LED = constrain(val_to_LED, 0, pixels.numPixels());
-  Serial.println(val);
+  //Serial.println(val);
   
-  Serial.println(val);
   for(int i=0; i<val_to_LED; i++) { // For each pixel...
 
     pixels.setPixelColor(i, pixels.Color(255, 48, 48)); 
@@ -76,7 +161,7 @@ void proximity_equaliser_reverse(){
   val_to_LED = constrain(val_to_LED, 0, pixels.numPixels());
   val_to_LED = pixels.numPixels() - val_to_LED;
   //val_to_LED = pixels.numPixels() - map(val, sensor_min, sensor_max, 0, pixels.numPixels());
-  Serial.println(val);
+  //Serial.println(val);
   for(int i=0; i<val_to_LED; i++) { // For each pixel...
 
     pixels.setPixelColor(i, pixels.Color(255, 48, 48)); 
@@ -93,18 +178,18 @@ void proximity_colour(){
   int val_to_colour =  map(val, sensor_min, sensor_max, 0, 255);
   val_to_colour = constrain(val_to_colour,0,255);
 
-  Serial.print(val);
-  Serial.print('\t');
-  Serial.print(val_to_colour);
-  Serial.print('\t');
+//  Serial.print(val);
+//  Serial.print('\t');
+//  Serial.print(val_to_colour);
+//  Serial.print('\t');
   int blue = 255-val_to_colour;
   //constrain(blue,0,255);
   int red = val_to_colour;
   //constrain(red,0,255);
-  Serial.print(blue);
-  Serial.print('\t');
-  Serial.print(red);
-  Serial.println();
+//  Serial.print(blue);
+//  Serial.print('\t');
+//  Serial.print(red);
+//  Serial.println();
   
   for(int i=0; i<pixels.numPixels(); i++) { // For each pixel...
         pixels.setPixelColor(i, pixels.Color(red, 0, blue)); 
@@ -120,9 +205,9 @@ void proximity_brightness(){
   val = weight * analogRead(sensorpin) + (1 - weight) * val;
   int val_to_colour =  map(val, sensor_min, sensor_max, 0, 255);
   val_to_colour = constrain(val_to_colour,0,255);
-  Serial.print(val);
-  Serial.print('\t');
-  Serial.println(val_to_colour);
+//  Serial.print(val);
+//  Serial.print('\t');
+//  Serial.println(val_to_colour);
 
   for(int i=0; i<pixels.numPixels(); i++) { // For each pixel...
 
@@ -259,9 +344,9 @@ void controlled_pulse(){
         val = weight * analogRead(sensorpin) + (1 - weight) * val;
         //interval =  map(val, sensor_min, sensor_max, 0, 1000);
         interval = val; //constrain(interval, 0, 1000);
-        Serial.print(val);
-        Serial.print("\t");
-        Serial.println(interval);
+//        Serial.print(val);
+//        Serial.print("\t");
+//        Serial.println(interval);
 
         unsigned long currentMillis = millis();
 
@@ -302,9 +387,9 @@ void controlled_pulse_reverse(){
         val = weight * analogRead(sensorpin) + (1 - weight) * val;
         //interval =  map(val, sensor_min, sensor_max, 0, 1000);
         interval = 1000.0 - val; //constrain(interval, 0, 1000);
-        Serial.print(val);
-        Serial.print("\t");
-        Serial.println(interval);
+//        Serial.print(val);
+//        Serial.print("\t");
+//        Serial.println(interval);
 
         unsigned long currentMillis = millis();
 
